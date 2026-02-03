@@ -39,26 +39,20 @@ export async function calculate(challengeId: string, legacyId: number): Promise<
     
 
     // Update LCR entries for members who submitted and have attended='N' (same logic as original)
-    // Note: using userId instead of coderId to match the new schema
+    // Note: using coderId to match LongCompResult schema
     finalSubmissions.forEach(async (submission) => {
-      const res = _.filter(lcrEntries, { userId: parseInt(submission.memberId) });
+      const res = _.filter(lcrEntries, { coderId: parseInt(submission.memberId) });
       if (res && res[0] && res[0].attended && res[0].attended === 'N') {
         // Update the attended flag (equivalent to updateLCREntry in original)
-        await database.updateLCREntry(dbChallengeId, res[0].userId);
+        await database.updateLCREntry(dbChallengeId, res[0].coderId);
       }
     });
-    
-    // Initiate rating calculation locally instead of calling external API
-    logger.debug(`=== Initiating local rating calculation for challenge: ${challengeId} ===`);
 
-    // Get roundId for the challenge
-    const roundId = await database.getRoundIdForChallenge(legacyId);
-    if (!roundId) {
-      logger.warn(`No round found for legacy ID ${legacyId}, skipping rating calculation`);
-      return;
-    }
+    // dbChallengeId is now actually roundId (from getChallengeId which queries Round)
+    const roundId = dbChallengeId;
 
-    // Process ratings locally
+    // Process ratings locally instead of calling external API
+    logger.debug(`=== Initiating local rating calculation for round: ${roundId} ===`);
     const result = await processMarathonRatings(roundId);
     logger.info(`Rating calculation result: ${result.status} - ${result.message}`);
 

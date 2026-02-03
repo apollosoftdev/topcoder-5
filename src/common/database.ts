@@ -23,63 +23,63 @@ class DatabaseService {
   }
 
   /**
-   * Get challenge ID for the given legacy challenge ID
-   * Replaces the original getRoundId function
+   * Get round ID for the given legacy challenge ID
+   * Uses Round.tcDirectProjectId to find the round
    * @param legacyId - Legacy challenge ID (projectId)
-   * @returns challengeId corresponding to the legacy ID
+   * @returns roundId corresponding to the legacy ID
    */
   async getChallengeId(legacyId: number): Promise<number | null> {
     try {
-      logger.info(`Getting challenge information for legacy ID: ${legacyId}`);
-      
-      const challenge = await this.prisma.challenge.findUnique({
-        where: { legacyId },
+      logger.info(`Getting round ID for legacy ID: ${legacyId}`);
+
+      const round = await this.prisma.round.findFirst({
+        where: { tcDirectProjectId: legacyId },
         select: { id: true }
       });
 
-      return challenge?.id ? Number(challenge.id) : null;
+      return round?.id ? Number(round.id) : null;
     } catch (error) {
-      logger.error('Error getting challenge ID', { legacyId, error });
+      logger.error('Error getting round ID', { legacyId, error });
       throw error;
     }
   }
 
   /**
-   * Get user challenge entries for the given challenge ID
-   * Replaces the original getLCREntries function (long_comp_result → user_challenges)
-   * @param challengeId - Challenge ID
-   * @returns user challenge entries
+   * Get LongCompResult entries for the given round ID
+   * Uses LongCompResult model for marathon matches
+   * @param roundId - Round ID
+   * @returns long comp result entries
    */
-  async getLCREntries(challengeId: number) {
+  async getLCREntries(roundId: number) {
     try {
-      return await this.prisma.userChallenge.findMany({
-        where: { challengeId },
+      return await this.prisma.longCompResult.findMany({
+        where: { roundId },
       });
     } catch (error) {
-      logger.error('Error getting LCR entries', { challengeId, error });
+      logger.error('Error getting LCR entries', { roundId, error });
       throw error;
     }
   }
 
   /**
-   * Update user challenge entry to mark attendance
-   * Replaces the original updateLCREntry function
-   * @param challengeId - Challenge ID
-   * @param userId - User ID (equivalent to coderId in original)
+   * Update LongCompResult entry to mark attendance
+   * Uses LongCompResult model for marathon matches
+   * @param roundId - Round ID
+   * @param coderId - Coder ID
    */
-  async updateLCREntry(challengeId: number, userId: number): Promise<void> {
+  async updateLCREntry(roundId: number, coderId: number): Promise<void> {
     try {
-      await this.prisma.userChallenge.updateMany({
+      await this.prisma.longCompResult.updateMany({
         where: {
-          challengeId,
-          userId,
+          roundId,
+          coderId,
         },
         data: {
           attended: 'Y',
         },
       });
     } catch (error) {
-      logger.error('Error updating LCR entry', { challengeId, userId, error });
+      logger.error('Error updating LCR entry', { roundId, coderId, error });
       throw error;
     }
   }
@@ -97,28 +97,15 @@ class DatabaseService {
 
   /**
    * Get round ID for a given legacy challenge ID
-   * Uses the Round table to find the round associated with a challenge
-   * @param legacyId - Legacy challenge ID
+   * Uses Round.tcDirectProjectId to find the round associated with a challenge
+   * @param legacyId - Legacy challenge ID (maps to tcDirectProjectId)
    * @returns round ID or null if not found
    */
   async getRoundIdForChallenge(legacyId: number): Promise<number | null> {
     try {
       logger.info(`Getting round ID for legacy challenge ID: ${legacyId}`);
 
-      // First get the challenge
-      const challenge = await this.prisma.challenge.findUnique({
-        where: { legacyId },
-        select: { id: true }
-      });
-
-      if (!challenge) {
-        logger.warn(`No challenge found for legacy ID: ${legacyId}`);
-        return null;
-      }
-
-      // Find the round associated with this challenge
-      // The round is linked via tcDirectProjectId in the original schema
-      // For now, we'll look for a round with matching tcDirectProjectId
+      // Find the round by tcDirectProjectId which maps to legacy challenge ID
       const round = await this.prisma.round.findFirst({
         where: { tcDirectProjectId: legacyId },
         select: { id: true }

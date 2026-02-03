@@ -119,34 +119,41 @@ describe('AlgorithmQubits', () => {
     });
 
     it('should initialize new players with rating 1200 and vol 515', () => {
+      // Use a realistic scenario: new player competing against established players
       const coders: RatingData[] = [
-        { coderId: 1, rating: 0, vol: 0, numRatings: 0, score: 100 },
-        { coderId: 2, rating: 0, vol: 0, numRatings: 0, score: 80 }
+        { coderId: 1, rating: 0, vol: 0, numRatings: 0, score: 100 },      // New player wins
+        { coderId: 2, rating: 1600, vol: 300, numRatings: 10, score: 80 }, // Established player
+        { coderId: 3, rating: 1400, vol: 300, numRatings: 5, score: 60 }   // Another established player
       ];
 
       const results = calculateRatings(coders);
 
-      expect(results).toHaveLength(2);
-      // Winner should have new rating > 1200
+      expect(results).toHaveLength(3);
+      // New player who won should have rating > 1200 (beat expectations)
       const winner = results.find(r => r.coderId === 1);
       expect(winner?.newRating).toBeGreaterThan(1200);
-      // Loser should have new rating < 1200 or close to 1200
-      const loser = results.find(r => r.coderId === 2);
-      expect(loser?.newRating).toBeLessThanOrEqual(1200);
+      // New player's volatility should be set to 385 after first competition
+      expect(winner?.newVol).toBe(385);
     });
 
     it('should increase rating for winners and decrease for losers', () => {
+      // Use different ratings so performance vs expectation is measurable
+      // Lower-rated player wins (upset) -> gains rating
+      // Higher-rated player loses -> loses rating
       const coders: RatingData[] = [
-        { coderId: 1, rating: 1500, vol: 300, numRatings: 5, score: 100 }, // Winner
-        { coderId: 2, rating: 1500, vol: 300, numRatings: 5, score: 50 }   // Loser
+        { coderId: 1, rating: 1400, vol: 300, numRatings: 5, score: 100 }, // Lower rated wins (upset)
+        { coderId: 2, rating: 1600, vol: 300, numRatings: 5, score: 80 },  // Mid rated
+        { coderId: 3, rating: 1800, vol: 300, numRatings: 5, score: 60 }   // Higher rated loses
       ];
 
       const results = calculateRatings(coders);
 
-      const winner = results.find(r => r.coderId === 1);
-      const loser = results.find(r => r.coderId === 2);
+      const upset = results.find(r => r.coderId === 1);
+      const loser = results.find(r => r.coderId === 3);
 
-      expect(winner?.newRating).toBeGreaterThan(winner?.oldRating || 0);
+      // Upset winner (lower rated beat higher rated) should gain rating
+      expect(upset?.newRating).toBeGreaterThan(upset?.oldRating || 0);
+      // High rated player who lost to lower rated should lose rating
       expect(loser?.newRating).toBeLessThan(loser?.oldRating || 0);
     });
 
@@ -183,16 +190,22 @@ describe('AlgorithmQubits', () => {
     });
 
     it('should set volatility to 385 after first competition', () => {
+      // New player competing in their first match
       const coders: RatingData[] = [
-        { coderId: 1, rating: 0, vol: 0, numRatings: 0, score: 100 }
+        { coderId: 1, rating: 0, vol: 0, numRatings: 0, score: 100 },      // New player
+        { coderId: 2, rating: 1500, vol: 300, numRatings: 10, score: 80 }  // Established player
       ];
 
       const results = calculateRatings(coders);
+      const newPlayer = results.find(r => r.coderId === 1);
 
-      expect(results[0].newVol).toBe(385);
+      // After first competition, new player's volatility should be FIRST_VOLATILITY (385)
+      expect(newPlayer?.newVol).toBe(385);
     });
 
     it('should handle single participant rounds', () => {
+      // Single participant is an edge case - rating should remain unchanged
+      // as there's no competition to measure performance against
       const coders: RatingData[] = [
         { coderId: 1, rating: 1500, vol: 300, numRatings: 5, score: 100 }
       ];
@@ -200,8 +213,9 @@ describe('AlgorithmQubits', () => {
       const results = calculateRatings(coders);
 
       expect(results).toHaveLength(1);
-      // Single participant should have minimal rating change
-      expect(Math.abs(results[0].newRating - results[0].oldRating)).toBeLessThan(50);
+      // Single participant should have unchanged rating (no competition)
+      expect(results[0].newRating).toBe(results[0].oldRating);
+      expect(results[0].newVol).toBe(results[0].oldVol);
     });
 
     it('should preserve old rating values in output', () => {

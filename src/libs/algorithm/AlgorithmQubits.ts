@@ -199,7 +199,6 @@ function calculateActualRanks(coders: RatingData[]): Map<number, number> {
     }
 
     // Average rank for tied coders (1-based)
-    const tiedCount = j - i;
     const avgRank = (i + 1 + j) / 2; // Average of first and last rank in tie
 
     for (let k = i; k < j; k++) {
@@ -244,6 +243,18 @@ function calculateWeight(numRatings: number, rating: number): number {
 export function calculateRatings(coders: RatingData[]): CalculatedRating[] {
   if (coders.length === 0) {
     return [];
+  }
+
+  // Single participant edge case - no competition to rate against
+  if (coders.length === 1) {
+    const coder = coders[0];
+    return [{
+      ...coder,
+      oldRating: coder.rating,
+      oldVol: coder.vol,
+      newRating: coder.rating,
+      newVol: coder.vol
+    }];
   }
 
   // Step 1: Initialize new players

@@ -527,7 +527,7 @@ model Round {
 
   // Relations
   contest               Contest?  @relation(fields: [contestId], references: [id])
-  roundType             RoundType? @relation(fields: [roundTypeId], references: [id])
+  roundType             RoundTypeLU? @relation(fields: [roundTypeId], references: [id])
   calendar              Calendar? @relation(fields: [calendarId], references: [id])
   rooms                 Room[]
   roomResults           RoomResult[]
@@ -550,7 +550,7 @@ model Round {
 }
 
 /// Round type lookup
-model RoundType {
+model RoundTypeLU {
   id                    Int       @id @default(autoincrement())
   roundTypeDesc         String    @map("round_type_desc") @db.VarChar(64)
   algoRatingTypeId      Int?      @map("algo_rating_type_id")

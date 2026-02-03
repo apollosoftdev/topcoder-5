@@ -8,6 +8,7 @@ import _ from 'lodash';
 import * as helper from '../common/helper';
 import database from '../common/database';
 import logger, { buildService } from '../common/logger';
+import { processMarathonRatings } from '../libs/process/MarathonRatingProcess';
 
 /**
  * Calculate ratings for a Marathon Match challenge
@@ -47,9 +48,19 @@ export async function calculate(challengeId: string, legacyId: number): Promise<
       }
     });
     
-    // Initiate rating calculation (same as original, but using challengeId instead of roundId)
-    logger.debug(`=== Initiating rating calculation for challenge: ${challengeId} ===`);
-    await helper.initiateRatingCalculation(challengeId);
+    // Initiate rating calculation locally instead of calling external API
+    logger.debug(`=== Initiating local rating calculation for challenge: ${challengeId} ===`);
+
+    // Get roundId for the challenge
+    const roundId = await database.getRoundIdForChallenge(legacyId);
+    if (!roundId) {
+      logger.warn(`No round found for legacy ID ${legacyId}, skipping rating calculation`);
+      return;
+    }
+
+    // Process ratings locally
+    const result = await processMarathonRatings(roundId);
+    logger.info(`Rating calculation result: ${result.status} - ${result.message}`);
 
     logger.debug('=== Marathon Match ratings calculation success ===');
   } catch (error) {

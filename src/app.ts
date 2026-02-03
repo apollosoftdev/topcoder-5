@@ -6,16 +6,19 @@
 import 'dotenv/config';
 
 import { Kafka, Consumer } from 'kafkajs';
+import { Server } from 'http';
 import config from './config/default';
 import * as KafkaHandlerService from './services/KafkaHandlerService';
 import * as helper from './common/helper';
 import logger from './common/logger';
 import database from './common/database';
+import app from './api';
 
 // Global Promise enhancement
 global.Promise = require('bluebird');
 
 let consumer: Consumer;
+let server: Server;
 
 /**
  * Initialize and start Kafka consumer
@@ -92,6 +95,19 @@ async function startKafkaConsumer(): Promise<void> {
 }
 
 /**
+ * Start Express HTTP server
+ */
+async function startHttpServer(): Promise<void> {
+  return new Promise((resolve) => {
+    server = app.listen(config.PORT, () => {
+      logger.info(`HTTP server started on port ${config.PORT}`);
+      logger.info(`Swagger UI available at http://localhost:${config.PORT}/api-docs`);
+      resolve();
+    });
+  });
+}
+
+/**
  * Health check function for monitoring
  */
 function healthCheck(): boolean {
@@ -109,16 +125,26 @@ function healthCheck(): boolean {
  */
 async function shutdown(): Promise<void> {
   logger.info('Shutting down gracefully...');
-  
+
   try {
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server.close((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      logger.info('HTTP server closed');
+    }
+
     if (consumer) {
       await consumer.disconnect();
       logger.info('Kafka consumer disconnected');
     }
-    
+
     await database.disconnect();
     logger.info('Database connection closed');
-    
+
     process.exit(0);
   } catch (error) {
     logger.error('Error during shutdown', { error });
@@ -133,17 +159,20 @@ async function main(): Promise<void> {
   try {
     logger.info('Starting Member Profile Processor...');
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    
+
+    // Start HTTP server for REST API
+    await startHttpServer();
+
     // Start Kafka consumer
     await startKafkaConsumer();
-    
+
     // Setup graceful shutdown handlers
     process.on('SIGTERM', shutdown);
     process.on('SIGINT', shutdown);
     process.on('SIGUSR2', shutdown); // For nodemon
-    
+
     logger.info('Member Profile Processor started successfully');
-    
+
   } catch (error) {
     logger.error('Failed to start application', { error });
     process.exit(1);

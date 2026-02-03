@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Member Profile Processor API
+  version: 2.0.0
+  description: Marathon Match Rating Calculation API for Topcoder
+  contact:
+    name: Topcoder
+    url: https://topcoder.com
+
+servers:
+  - url: /
+    description: Current server
+
+tags:
+  - name: Ratings
+    description: Rating calculation endpoints
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /ratings/mm/calculate:
+    post:
+      summary: Calculate marathon match ratings
+      description: Calculates ratings for all participants in a marathon match round
+      tags:
+        - Ratings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './schemas/CalculateRatingsRequest.yml'
+      responses:
+        '200':
+          description: Rating calculation completed
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/CalculateRatingsResponse.yml'
+              examples:
+                success:
+                  summary: Successful calculation
+                  value:
+                    status: SUCCESS
+                    message: Successfully calculated and persisted ratings for 10 coders
+                alreadyCalculated:
+                  summary: Round already processed
+                  value:
+                    status: ALREADY_CALCULATED
+                    message: Round 1 has already been rated
+        '400':
+          description: Invalid request - missing or invalid roundId
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/ErrorResponse.yml'
+              example:
+                error: roundId is required and must be a positive integer
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/ErrorResponse.yml'
+              example:
+                error: Internal server error
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the API
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: './schemas/HealthResponse.yml'

@@ -1,0 +1,8 @@
+type: object
+required:
+  - roundId
+properties:
+  roundId:
+    type: integer
+    description: The ID of the round to calculate ratings for
+    example: 1

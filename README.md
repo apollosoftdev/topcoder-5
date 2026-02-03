@@ -12,7 +12,7 @@ A service that processes Marathon Match competition events to update member prof
 
 2. **Start Kafka**
    ```bash
-   docker-compose up
+   docker compose up
    ```
 
 3. **Setup database**

@@ -6,19 +6,16 @@
 import 'dotenv/config';
 
 import { Kafka, Consumer } from 'kafkajs';
-import { Server } from 'http';
 import config from './config/default';
 import * as KafkaHandlerService from './services/KafkaHandlerService';
 import * as helper from './common/helper';
 import logger from './common/logger';
 import database from './common/database';
-import app from './api';
 
 // Global Promise enhancement
 global.Promise = require('bluebird');
 
 let consumer: Consumer;
-let server: Server;
 
 /**
  * Initialize and start Kafka consumer
@@ -33,12 +30,12 @@ async function startKafkaConsumer(): Promise<void> {
     consumer = kafka.consumer({ groupId: config.KAFKA_GROUP_ID });
 
     // Subscribe to topics
-    await consumer.subscribe({ 
+    await consumer.subscribe({
       topics: [
         config.KAFKA_AUTOPILOT_NOTIFICATIONS_TOPIC,
         config.KAFKA_RATING_SERVICE_TOPIC
       ],
-      fromBeginning: false 
+      fromBeginning: false
     });
 
     // Start consuming messages
@@ -67,14 +64,14 @@ async function startKafkaConsumer(): Promise<void> {
 
           // Process the message
           await KafkaHandlerService.handle(messageJSON);
-          
+
           logger.info('Successfully processed message', { topic, partition, offset: message.offset });
 
         } catch (error) {
-          logger.error('Error processing Kafka message', { 
-            topic, 
-            partition, 
-            offset: message.offset, 
+          logger.error('Error processing Kafka message', {
+            topic,
+            partition,
+            offset: message.offset,
             error: error instanceof Error ? {
               message: error.message,
               stack: error.stack,
@@ -92,19 +89,6 @@ async function startKafkaConsumer(): Promise<void> {
     logger.error('Failed to start Kafka consumer', { error });
     throw error;
   }
-}
-
-/**
- * Start Express HTTP server
- */
-async function startHttpServer(): Promise<void> {
-  return new Promise((resolve) => {
-    server = app.listen(config.PORT, () => {
-      logger.info(`HTTP server started on port ${config.PORT}`);
-      logger.info(`Swagger UI available at http://localhost:${config.PORT}/api-docs`);
-      resolve();
-    });
-  });
 }
 
 /**
@@ -127,16 +111,6 @@ async function shutdown(): Promise<void> {
   logger.info('Shutting down gracefully...');
 
   try {
-    if (server) {
-      await new Promise<void>((resolve, reject) => {
-        server.close((err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-      logger.info('HTTP server closed');
-    }
-
     if (consumer) {
       await consumer.disconnect();
       logger.info('Kafka consumer disconnected');
@@ -159,9 +133,6 @@ async function main(): Promise<void> {
   try {
     logger.info('Starting Member Profile Processor...');
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-
-    // Start HTTP server for REST API
-    await startHttpServer();
 
     // Start Kafka consumer
     await startKafkaConsumer();
@@ -199,4 +170,4 @@ if (require.main === module) {
 }
 
 export { healthCheck, shutdown };
-export default main; 
+export default main;

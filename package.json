@@ -34,7 +34,7 @@
     "kafkajs": "^2.2.4",
     "lodash": "^4.17.21",
     "superagent": "^8.1.2",
-    "tc-core-library-js": "appirio-tech/tc-core-library-js.git#v2.6.4",
+    "tc-core-library-js": "topcoder-platform/tc-core-library-js.git#v2.6.4",
     "winston": "^3.11.0"
   },
   "devDependencies": {

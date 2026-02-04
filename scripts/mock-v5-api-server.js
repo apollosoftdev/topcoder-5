@@ -5,6 +5,10 @@
  * Aligns with seed-database.js test data:
  * - Round tcDirectProjectId: 30054200 (used as legacyId for V5 challenge lookup)
  * - Users: mm_veteran1, mm_veteran2, mm_newbie1, mm_newbie2, mm_elite
+ *
+ * Security Note: This mock server is for LOCAL DEVELOPMENT/TESTING ONLY.
+ * It intentionally uses HTTP on localhost for simplicity.
+ * Do NOT deploy this server in production.
  */
 
 const http = require('http');
@@ -158,13 +162,21 @@ function parseRequestBody(req) {
   });
 }
 
-// Create the mock server
+// Create the mock server (HTTP is intentional for localhost-only development/testing)
+// nosemgrep: problem-based-packs.insecure-transport.js-node.using-http-server.using-http-server
 const mockApi = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const path = parsedUrl.pathname;
   const query = parsedUrl.query;
 
-  console.log(`[Mock V5 API] ${req.method} ${path}`, Object.keys(query).length > 0 ? query : '');
+  // Use safe logging with explicit format to prevent format string injection
+  const logData = {
+    prefix: '[Mock V5 API]',
+    method: String(req.method),
+    path: String(path),
+    query: Object.keys(query).length > 0 ? query : undefined
+  };
+  console.log('%s %s %s', logData.prefix, logData.method, logData.path, logData.query || '');
 
   // Handle CORS
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16.3
@@ -16,6 +14,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+      - /var/run/postgresql
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -24,6 +29,12 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    security_opt:
+      - no-new-privileges:true
+    # Note: read_only not used - Zookeeper needs write access to /etc/kafka/
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -47,6 +58,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    security_opt:
+      - no-new-privileges:true
+    # Note: read_only not used - Kafka needs write access to /etc/kafka/
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
 volumes:
   postgres_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:

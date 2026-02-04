@@ -149,9 +149,9 @@ async function testBasicCalculation() {
   test('AlgoRatingHistory entries created', history.length === 4);
 
   // Check winner gets higher rating
-  const winner = lcr.find(r => r.systemPointTotal === 95.5);
-  test('Winner rating increased', winner.newRating > winner.oldRating,
-    `${winner.oldRating} → ${winner.newRating}`);
+  const winner = lcr.find(r => Number(r.systemPointTotal) === 95.5);
+  test('Winner rating increased', winner && winner.newRating > winner.oldRating,
+    winner ? `${winner.oldRating} → ${winner.newRating}` : 'Winner not found');
 }
 
 async function testNewPlayerInitialization() {

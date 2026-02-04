@@ -7,12 +7,15 @@ import axios, { AxiosInstance } from 'axios';
 import config from '../config/default';
 import logger from './logger';
 
-// Import m2m auth from tc-core-library-js
-const m2mAuth = require('tc-core-library-js').auth.m2m;
+// Only initialize m2m auth if not in mock mode and AUTH0_URL is configured
+let m2m: { getMachineToken: (clientId: string, clientSecret: string) => Promise<string> } | null = null;
 
-const m2m = m2mAuth(
-  _.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'AUTH0_PROXY_SERVER_URL'])
-);
+if (!config.USE_MOCK_HELPER && config.AUTH0_URL) {
+  const m2mAuth = require('tc-core-library-js').auth.m2m;
+  m2m = m2mAuth(
+    _.pick(config, ['AUTH0_URL', 'AUTH0_AUDIENCE', 'AUTH0_PROXY_SERVER_URL'])
+  );
+}
 
 export interface ChallengeDetails {
   id: string;
@@ -49,16 +52,21 @@ export interface KafkaOptions {
  * Function to get M2M token
  */
 export async function getM2MToken(): Promise<string> {
+  // Mock mode - return fake token
+  if (config.USE_MOCK_HELPER) {
+    logger.info('Using mock M2M token (USE_MOCK_HELPER=true)');
+    return 'mock-token-for-development';
+  }
+
   logger.info('Getting M2M token');
   if (!config.AUTH0_CLIENT_ID || !config.AUTH0_CLIENT_SECRET) {
     throw new Error('AUTH0_CLIENT_ID and AUTH0_CLIENT_SECRET are required');
   }
 
-  // TODO: Remove this once we have real credentials
-  if (config.AUTH0_CLIENT_ID === 'mock-client-id' || config.AUTH0_CLIENT_SECRET === 'mock-client-secret') {
-    logger.warn('Using mock Auth0 credentials, returning mock token for development');
-    return 'mock-token-for-development';
+  if (!m2m) {
+    throw new Error('M2M auth not initialized. Check AUTH0_URL configuration.');
   }
+
   return m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET);
 }
 

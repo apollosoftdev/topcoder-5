@@ -39,6 +39,7 @@ AUTH0_CLIENT_ID=your-client-id
 AUTH0_CLIENT_SECRET=your-client-secret
 V5_API_URL=http://localhost:3001
 MOCK_V5_API_PORT=3001
+USE_MOCK_HELPER=true
 ```
 
 ## Architecture
@@ -109,6 +110,9 @@ npm run dev
 
 # Terminal 4: Send Kafka test messages
 npm run kafka:autopilot
+
+# Terminal 5: Check database
+npm run db:check
 ```
 
 ### Unit Tests

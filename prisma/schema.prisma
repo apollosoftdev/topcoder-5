@@ -28,25 +28,6 @@ enum CoderType {
   STUDENT
 }
 
-enum RoundType {
-  SINGLE_ROUND_MATCH
-  TOURNAMENT_ROUND
-  MARATHON_MATCH
-  PRACTICE_ROUND
-  LONG_ROUND
-  AMD_ROUND
-  WEAKEST_LINK_ROUND
-  MODERATED_CHAT
-  PRIVATE_LABEL_TOURNAMENT
-  TEAM_SINGLE_ROUND_MATCH
-  TEAM_TOURNAMENT_ROUND
-  LONG_PROBLEM_ROUND
-  LONG_PROBLEM_TOURNAMENT_ROUND
-  INTEL_ROUND
-  HIGH_SCHOOL_SRM
-  EDUCATION_SRM
-}
-
 enum ProblemStatus {
   ACTIVE
   INACTIVE
@@ -527,7 +508,7 @@ model Round {
 
   // Relations
   contest               Contest?  @relation(fields: [contestId], references: [id])
-  roundType             RoundTypeLU? @relation(fields: [roundTypeId], references: [id])
+  roundType             RoundType? @relation(fields: [roundTypeId], references: [id])
   calendar              Calendar? @relation(fields: [calendarId], references: [id])
   rooms                 Room[]
   roomResults           RoomResult[]
@@ -550,7 +531,7 @@ model Round {
 }
 
 /// Round type lookup
-model RoundTypeLU {
+model RoundType {
   id                    Int       @id @default(autoincrement())
   roundTypeDesc         String    @map("round_type_desc") @db.VarChar(64)
   algoRatingTypeId      Int?      @map("algo_rating_type_id")

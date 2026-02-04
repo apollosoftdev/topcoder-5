@@ -7,8 +7,8 @@ import {
   normsinv,
   winProbability,
   calculateRatings
-} from '../../../src/libs/algorithm/AlgorithmQubits';
-import { RatingData } from '../../../src/libs/models';
+} from '../../../libs/algorithm/AlgorithmQubits';
+import { RatingData, CalculatedRating } from '../../../libs/models';
 
 describe('AlgorithmQubits', () => {
   describe('erf (error function)', () => {
@@ -182,7 +182,7 @@ describe('AlgorithmQubits', () => {
       ];
 
       const results = calculateRatings(coders);
-      const newPlayer = results.find(r => r.coderId === 1);
+      const newPlayer = results.find((r: CalculatedRating) => r.coderId === 1);
 
       // Cap for new player (numRatings=0): 150 + 1500/(2+0) = 150 + 750 = 900
       // New rating should be capped at 1200 + 900 = 2100 max
@@ -197,7 +197,7 @@ describe('AlgorithmQubits', () => {
       ];
 
       const results = calculateRatings(coders);
-      const newPlayer = results.find(r => r.coderId === 1);
+      const newPlayer = results.find((r: CalculatedRating) => r.coderId === 1);
 
       // After first competition, new player's volatility should be FIRST_VOLATILITY (385)
       expect(newPlayer?.newVol).toBe(385);
@@ -226,8 +226,8 @@ describe('AlgorithmQubits', () => {
 
       const results = calculateRatings(coders);
 
-      const coder1 = results.find(r => r.coderId === 1);
-      const coder2 = results.find(r => r.coderId === 2);
+      const coder1 = results.find((r: CalculatedRating) => r.coderId === 1);
+      const coder2 = results.find((r: CalculatedRating) => r.coderId === 2);
 
       expect(coder1?.oldRating).toBe(1650);
       expect(coder1?.oldVol).toBe(280);
@@ -247,7 +247,7 @@ describe('AlgorithmQubits', () => {
       expect(results).toHaveLength(3);
 
       // All should have valid new ratings
-      results.forEach(r => {
+      results.forEach((r: CalculatedRating) => {
         expect(r.newRating).toBeGreaterThan(0);
         expect(r.newVol).toBeGreaterThan(0);
       });
@@ -261,7 +261,7 @@ describe('AlgorithmQubits', () => {
       ];
 
       const results = calculateRatings(coders);
-      const loser = results.find(r => r.coderId === 2);
+      const loser = results.find((r: CalculatedRating) => r.coderId === 2);
 
       expect(loser?.newRating).toBeGreaterThanOrEqual(1);
     });
@@ -274,7 +274,7 @@ describe('AlgorithmQubits', () => {
 
       const results = calculateRatings(coders);
 
-      results.forEach(r => {
+      results.forEach((r: CalculatedRating) => {
         expect(r.newVol).toBeGreaterThanOrEqual(75);
         expect(r.newVol).toBeLessThanOrEqual(500);
       });

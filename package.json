@@ -22,7 +22,7 @@
     "kafka:autopilot": "node scripts/kafka-test.js autopilot",
     "kafka:rating": "node scripts/kafka-test.js rating",
     "kafka:coders": "node scripts/kafka-test.js coders",
-    "mock:api": "node scripts/mock-v5-api-server.js",
+    "mock:api": "node scripts/mock-v5-api-server.js 2>&1 | tee mock-server.log",
     "verify": "node scripts/verify-implementation.js"
   },
   "dependencies": {

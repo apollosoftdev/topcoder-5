@@ -1,6 +1,6 @@
 /**
  * Check Database Data Script
- * 
+ *
  * This script connects to the database and extracts real values
  * to use in Kafka test messages.
  */
@@ -13,17 +13,34 @@ async function checkDatabaseData() {
   try {
     console.log('🔍 Checking database for existing data...\n');
 
-    // Check challenges
-    const challenges = await prisma.challenge.findMany({
+    // Check contests
+    const contests = await prisma.contest.findMany({
       take: 5,
       orderBy: { id: 'desc' }
     });
 
-    console.log('📊 Challenges found:', challenges.length);
-    if (challenges.length > 0) {
-      console.log('   Sample challenges:');
-      challenges.forEach(challenge => {
-        console.log(`   - ID: ${challenge.id}, Legacy ID: ${challenge.legacyId}, Component ID: ${challenge.componentId || 'N/A'}`);
+    console.log('📊 Contests found:', contests.length);
+    if (contests.length > 0) {
+      console.log('   Sample contests:');
+      contests.forEach(contest => {
+        console.log(`   - ID: ${contest.id}, Name: ${contest.name || 'N/A'}, Status: ${contest.status || 'N/A'}`);
+      });
+    }
+
+    // Check rounds
+    const rounds = await prisma.round.findMany({
+      take: 5,
+      include: {
+        contest: true
+      },
+      orderBy: { id: 'desc' }
+    });
+
+    console.log('\n🔄 Rounds found:', rounds.length);
+    if (rounds.length > 0) {
+      console.log('   Sample rounds:');
+      rounds.forEach(round => {
+        console.log(`   - ID: ${round.id}, Name: ${round.name || 'N/A'}, Contest: ${round.contest?.name || 'N/A'}, TC Direct Project: ${round.tcDirectProjectId || 'N/A'}`);
       });
     }
 
@@ -37,72 +54,109 @@ async function checkDatabaseData() {
     if (users.length > 0) {
       console.log('   Sample users:');
       users.forEach(user => {
-        console.log(`   - ID: ${user.id}, Handle: ${user.handle}, Rating: ${user.rating || 'N/A'}, Vol: ${user.vol || 'N/A'}`);
+        console.log(`   - ID: ${user.id}, Handle: ${user.handle}, Status: ${user.status || 'N/A'}`);
       });
     }
 
-    // Check user challenges
-    const userChallenges = await prisma.userChallenge.findMany({
+    // Check coders
+    const coders = await prisma.coder.findMany({
       take: 5,
       include: {
-        user: true,
-        challenge: true
+        user: true
       },
-      orderBy: { userId: 'desc' }
+      orderBy: { id: 'desc' }
     });
 
-    console.log('\n🏆 User Challenges found:', userChallenges.length);
-    if (userChallenges.length > 0) {
-      console.log('   Sample user challenges:');
-      userChallenges.forEach(uc => {
-        console.log(`   - User: ${uc.user.handle} (${uc.userId}) | Challenge: ${uc.challenge.legacyId} | Placed: ${uc.placed || 'N/A'}`);
+    console.log('\n💻 Coders found:', coders.length);
+    if (coders.length > 0) {
+      console.log('   Sample coders:');
+      coders.forEach(coder => {
+        console.log(`   - ID: ${coder.id}, User: ${coder.user.handle} (${coder.userId}), Country: ${coder.countryCode || 'N/A'}`);
       });
     }
 
-    // Check submissions
-    const submissions = await prisma.submission.findMany({
+    // Check algo ratings
+    const algoRatings = await prisma.algoRating.findMany({
       take: 5,
       include: {
-        user: true,
-        challenge: true
+        coder: {
+          include: {
+            user: true
+          }
+        },
+        ratingType: true
       },
-      orderBy: { submissionTime: 'desc' }
+      orderBy: { rating: 'desc' }
     });
 
-    console.log('\n📝 Submissions found:', submissions.length);
-    if (submissions.length > 0) {
-      console.log('   Sample submissions:');
-      submissions.forEach(sub => {
-        console.log(`   - User: ${sub.user.handle} | Challenge: ${sub.challenge.legacyId} | Score: ${sub.score || 'N/A'}`);
+    console.log('\n📈 Algo Ratings found:', algoRatings.length);
+    if (algoRatings.length > 0) {
+      console.log('   Sample ratings:');
+      algoRatings.forEach(ar => {
+        console.log(`   - User: ${ar.coder.user.handle} | Type: ${ar.ratingType.algoRatingTypeDesc} | Rating: ${ar.rating} | Vol: ${ar.vol}`);
       });
     }
 
-    // Check rating history
-    const ratingHistory = await prisma.ratingHistory.findMany({
+    // Check long comp results (marathon match results)
+    const longCompResults = await prisma.longCompResult.findMany({
       take: 5,
       include: {
         user: true,
-        challenge: true
+        round: true
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { id: 'desc' }
     });
 
-    console.log('\n📈 Rating History found:', ratingHistory.length);
+    console.log('\n🏆 Long Comp Results (Marathon) found:', longCompResults.length);
+    if (longCompResults.length > 0) {
+      console.log('   Sample results:');
+      longCompResults.forEach(lcr => {
+        console.log(`   - User: ${lcr.user.handle} | Round: ${lcr.round.name || lcr.roundId} | Placed: ${lcr.placed || 'N/A'} | Old Rating: ${lcr.oldRating || 'N/A'} | New Rating: ${lcr.newRating || 'N/A'}`);
+      });
+    }
+
+    // Check algo rating history
+    const ratingHistory = await prisma.algoRatingHistory.findMany({
+      take: 5,
+      include: {
+        coder: {
+          include: {
+            user: true
+          }
+        },
+        round: true,
+        ratingType: true
+      },
+      orderBy: { id: 'desc' }
+    });
+
+    console.log('\n📊 Algo Rating History found:', ratingHistory.length);
     if (ratingHistory.length > 0) {
       console.log('   Sample rating history:');
       ratingHistory.forEach(rh => {
-        console.log(`   - User: ${rh.user.handle} | Challenge: ${rh.challenge.legacyId} | Rating: ${rh.rating} | Vol: ${rh.vol}`);
+        console.log(`   - User: ${rh.coder.user.handle} | Round: ${rh.round.name || rh.roundId} | Rating: ${rh.rating} | Vol: ${rh.vol}`);
+      });
+    }
+
+    // Check algo rating types
+    const algoRatingTypes = await prisma.algoRatingType.findMany();
+    console.log('\n📋 Algo Rating Types found:', algoRatingTypes.length);
+    if (algoRatingTypes.length > 0) {
+      console.log('   Rating types:');
+      algoRatingTypes.forEach(art => {
+        console.log(`   - ID: ${art.id}, Description: ${art.algoRatingTypeDesc}`);
       });
     }
 
     // Extract sample data for Kafka messages
     console.log('\n🎯 Sample Data for Kafka Messages:');
     console.log('=====================================');
-    
-    if (challenges.length > 0) {
-      const sampleChallenge = challenges[0];
-      console.log(`Challenge Legacy ID: ${sampleChallenge.legacyId}`);
-      console.log(`Challenge ID: ${sampleChallenge.id}`);
+
+    if (rounds.length > 0) {
+      const sampleRound = rounds[0];
+      console.log(`Round ID: ${sampleRound.id}`);
+      console.log(`Round Name: ${sampleRound.name}`);
+      console.log(`TC Direct Project ID: ${sampleRound.tcDirectProjectId || 'N/A'}`);
     }
 
     if (users.length > 0) {
@@ -111,9 +165,9 @@ async function checkDatabaseData() {
       console.log(`User ID: ${sampleUser.id}`);
     }
 
-    if (userChallenges.length > 0) {
-      const sampleUC = userChallenges[0];
-      console.log(`Sample User-Challenge: User ${sampleUC.user.handle} in Challenge ${sampleUC.challenge.legacyId}`);
+    if (longCompResults.length > 0) {
+      const sampleLCR = longCompResults[0];
+      console.log(`Sample Long Comp Result: User ${sampleLCR.user.handle} in Round ${sampleLCR.round.name || sampleLCR.roundId}`);
     }
 
     console.log('\n💡 Use these values in your Kafka test messages!');
@@ -130,4 +184,4 @@ if (require.main === module) {
   checkDatabaseData();
 }
 
-module.exports = { checkDatabaseData }; 
+module.exports = { checkDatabaseData };

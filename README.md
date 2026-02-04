@@ -33,9 +33,12 @@ Create a `.env` file:
 DATABASE_URL=postgresql://postgres:password@localhost:5432/member_profile_processor
 KAFKA_URL=localhost:9092
 KAFKA_GROUP_ID=member-profile-processor-group-consumer
+AUTH0_URL=https://topcoder-dev.auth0.com/oauth/token
+AUTH0_AUDIENCE=https://m2m.topcoder-dev.com/
 AUTH0_CLIENT_ID=your-client-id
 AUTH0_CLIENT_SECRET=your-client-secret
 V5_API_URL=http://localhost:3001
+MOCK_V5_API_PORT=3001
 ```
 
 ## Architecture
@@ -82,21 +85,38 @@ npm run prisma:migrate
 
 ## Testing
 
+### Option 1: Quick Local Test (No Kafka needed)
+```bash
+# Build and run comprehensive verification tests
+npm run build
+npm run db:setup
+node scripts/verify-implementation.js
+```
+
+This runs 10 test scenarios verifying the rating algorithm.
+
+### Option 2: Full Integration Test (With Kafka)
+```bash
+# Terminal 1: Start infrastructure
+docker compose up -d
+
+# Terminal 2: Start Mock V5 API
+npm run mock:api
+
+# Terminal 3: Start the application
+npm run db:setup
+npm run dev
+
+# Terminal 4: Send Kafka test messages
+npm run kafka:autopilot
+```
+
 ### Unit Tests
 ```bash
 npm test
 ```
 
-### Test Rating Calculation
-```bash
-# 1. Seed the database with test data
-npm run db:seed
-
-# 2. Run the rating calculation test
-node scripts/test-rating-calculation.js
-```
-
-### Test Kafka Messages
+### Kafka Test Messages
 ```bash
 # Test autopilot message (triggers calculate)
 npm run kafka:autopilot
@@ -172,7 +192,7 @@ scripts/
 ├── check-db-data.js          # Check database state
 ├── kafka-test.js             # Kafka message testing
 ├── mock-v5-api-server.js     # Mock API for testing
-└── test-rating-calculation.js # Test rating calculation
+└── verify-implementation.js  # Comprehensive verification tests
 
 __tests__/
 └── libs/algorithm/
